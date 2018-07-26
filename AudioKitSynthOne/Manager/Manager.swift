@@ -34,6 +34,7 @@ public class Manager: UpdatableViewController {
     @IBOutlet weak var midiLearnToggle: SynthButton!
     @IBOutlet weak var pitchBend: AKVerticalPad!
     @IBOutlet weak var modWheelPad: AKVerticalPad!
+    @IBOutlet weak var linkButton: AKLinkButton!
 
     weak var embeddedViewsDelegate: EmbeddedViewsDelegate?
 
@@ -136,6 +137,10 @@ public class Manager: UpdatableViewController {
         bluetoothButton.layer.cornerRadius = 2
         bluetoothButton.layer.borderWidth = 1
 
+        #if ABLETON_ENABLED_1
+        linkButton.centerPopupIn(view: view)
+        #endif
+        
         // Setup Callbacks
         setupCallbacks()
 
@@ -228,7 +233,7 @@ public class Manager: UpdatableViewController {
         self.presetsViewController.didSelectPreset(index: self.appSettings.currentPresetIndex)
 
         // Show email list if first run
-        if appSettings.firstRun && !appSettings.signedMailingList {
+        if appSettings.firstRun && !appSettings.signedMailingList && Private.MailChimpAPIKey != "***REMOVED***" {
             performSegue(withIdentifier: "SegueToMailingList", sender: self)
             appSettings.firstRun = false
         }
@@ -239,7 +244,12 @@ public class Manager: UpdatableViewController {
 
         // Push Notifications request
         if appSettings.launches == 9 && !appSettings.pushNotifications { pushPopUp() }
-        if appSettings.launches % 18 == 0 && !appSettings.pushNotifications && !appSettings.isPreRelease { pushPopUp() }
+        if appSettings.launches % 18 == 0 &&
+            !appSettings.pushNotifications &&
+            !appSettings.isPreRelease &&
+            appSettings.launches > 0 {
+            pushPopUp()
+        }
 
         // Keyboard show or hide on launch
         keyboardToggle.value = appSettings.showKeyboard
@@ -258,6 +268,8 @@ public class Manager: UpdatableViewController {
         appendMIDIKnobs(from: sequencerPanel)
         appendMIDIKnobs(from: devViewController)
         appendMIDIKnobs(from: tuningsPanel)
+
+        setupLinkStuff()
     }
 
     // Make edge gestures more responsive
